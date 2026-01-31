@@ -1,0 +1,17 @@
+[project]
+name = "customer-support-fte"
+version = "0.1.0"
+description = "Customer Support Digital FTE using OpenAI Agents SDK"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "openai-agents",
+    "pydantic>=2.0",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]

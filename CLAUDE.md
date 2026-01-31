@@ -1,210 +1,130 @@
-# Claude Code Rules
+# Customer Support Digital FTE - Implementation Guide
 
-This file is generated during init for the selected agent.
+## Project Overview
 
-You are an expert AI assistant specializing in Spec-Driven Development (SDD). Your primary goal is to work with the architext to build products.
+Building a Customer Support Digital FTE using OpenAI Agents SDK. The FTE handles Tier 1 support: FAQs, billing questions, basic troubleshooting.
 
-## Task context
+Reference: `Capstone Building a Customer Support Digital FTE.md`
 
-**Your Surface:** You operate on a project level, providing guidance to users and executing development tasks via a defined set of tools.
+## Project Structure
 
-**Your Success is Measured By:**
-- All outputs strictly follow the user intent.
-- Prompt History Records (PHRs) are created automatically and accurately for every user prompt.
-- Architectural Decision Record (ADR) suggestions are made intelligently for significant decisions.
-- All changes are small, testable, and reference code precisely.
+```
+customer-support-fte/
+├── src/
+│   ├── __init__.py
+│   ├── models/
+│   │   └── context.py          # Pydantic context model
+│   ├── tools/
+│   │   ├── __init__.py
+│   │   ├── customer.py         # lookup_customer
+│   │   ├── billing.py          # check_billing_history, process_refund
+│   │   ├── support.py          # check_support_tickets, create_escalation_ticket
+│   ├── agents/
+│   │   ├── __init__.py
+│   │   ├── triage.py           # Entry point, routing
+│   │   ├── faq.py              # FAQ specialist
+│   │   ├── billing.py          # Billing specialist
+│   │   ├── technical.py        # Technical specialist
+│   │   └── escalation.py       # Human handoff
+│   ├── guardrails/
+│   │   ├── __init__.py
+│   │   ├── input.py            # PII, injection detection
+│   │   └── output.py           # Secrets leakage detection
+│   ├── hooks/
+│   │   └── observability.py    # RunHooks implementation
+│   ├── knowledge/
+│   │   ├── docs/               # Policy documents for RAG
+│   │   └── vectorstore.py      # FileSearchTool setup
+│   └── main.py                 # Handler, session management
+├── tests/                      # Manual verification scripts
+├── pyproject.toml
+└── .env
+```
 
-## Core Guarantees (Product Promise)
+## Build Order (Bottom-Up)
 
-- Record every user input verbatim in a Prompt History Record (PHR) after every user message. Do not truncate; preserve full multiline input.
-- PHR routing (all under `history/prompts/`):
-  - Constitution → `history/prompts/constitution/`
-  - Feature-specific → `history/prompts/<feature-name>/`
-  - General → `history/prompts/general/`
-- ADR suggestions: when an architecturally significant decision is detected, suggest: "📋 Architectural decision detected: <brief>. Document? Run `/sp.adr <title>`." Never auto‑create ADRs; require user consent.
+| Step | Build | Verify Before Moving On |
+|------|-------|------------------------|
+| 1 | Context model | Can instantiate, serialize to JSON |
+| 2 | Tools (mock data) | Each tool returns expected shape |
+| 3 | Single specialist (FAQAgent) | Responds to FAQ questions |
+| 4 | All specialists | Each handles its domain |
+| 5 | Triage + Handoffs | Routes correctly to specialists |
+| 6 | Guardrails | Blocks PII, injection, leakage |
+| 7 | Sessions | Conversation persists across turns |
+| 8 | Hooks | Logs appear with timing |
+| 9 | RAG | FAQAgent cites policy documents |
 
-## Development Guidelines
+## Implementation Principles
 
-### 1. Authoritative Source Mandate:
-Agents MUST prioritize and use MCP tools and CLI commands for all information gathering and task execution. NEVER assume a solution from internal knowledge; all methods require external verification.
+### 1. Mock Everything First
+```python
+# Don't connect to real databases - use hardcoded dictionaries
+MOCK_CUSTOMERS = {
+    "alice@example.com": {"id": "C001", "plan": "premium", "name": "Alice"}
+}
+```
 
-### 2. Execution Flow:
-Treat MCP servers as first-class tools for discovery, verification, execution, and state capture. PREFER CLI interactions (running commands and capturing outputs) over manual file creation or reliance on internal knowledge.
+### 2. One Agent at a Time
+- Get FAQAgent working standalone before adding routing
+- Test each specialist in isolation
 
-### 3. Knowledge capture (PHR) for Every User Input.
-After completing requests, you **MUST** create a PHR (Prompt History Record).
+### 3. Handoffs Last in Agent Layer
+- Build all specialists first
+- Then wire Triage to route between them
+- Handoffs are the integration layer
 
-**When to create PHRs:**
-- Implementation work (code changes, new features)
-- Planning/architecture discussions
-- Debugging sessions
-- Spec/task/plan creation
-- Multi-step workflows
+### 4. Guardrails Wrap, Don't Embed
+- Build agents without guardrails
+- Add guardrails as decorators/wrappers after agents work
 
-**PHR Creation Process:**
+### 5. Session/Hooks are Infrastructure
+- Add after core agent logic works
+- They observe, don't change behavior
 
-1) Detect stage
-   - One of: constitution | spec | plan | tasks | red | green | refactor | explainer | misc | general
+## Technology Stack
 
-2) Generate title
-   - 3–7 words; create a slug for the filename.
+- **Runtime**: Python 3.11+
+- **Package Manager**: uv
+- **Agent Framework**: OpenAI Agents SDK
+- **Models**: Pydantic for data validation
+- **Session Storage**: SQLite
+- **RAG**: FileSearchTool with vector stores
 
-2a) Resolve route (all under history/prompts/)
-  - `constitution` → `history/prompts/constitution/`
-  - Feature stages (spec, plan, tasks, red, green, refactor, explainer, misc) → `history/prompts/<feature-name>/` (requires feature context)
-  - `general` → `history/prompts/general/`
+## Validation Checklist
 
-3) Prefer agent‑native flow (no shell)
-   - Read the PHR template from one of:
-     - `.specify/templates/phr-template.prompt.md`
-     - `templates/phr-template.prompt.md`
-   - Allocate an ID (increment; on collision, increment again).
-   - Compute output path based on stage:
-     - Constitution → `history/prompts/constitution/<ID>-<slug>.constitution.prompt.md`
-     - Feature → `history/prompts/<feature-name>/<ID>-<slug>.<stage>.prompt.md`
-     - General → `history/prompts/general/<ID>-<slug>.general.prompt.md`
-   - Fill ALL placeholders in YAML and body:
-     - ID, TITLE, STAGE, DATE_ISO (YYYY‑MM‑DD), SURFACE="agent"
-     - MODEL (best known), FEATURE (or "none"), BRANCH, USER
-     - COMMAND (current command), LABELS (["topic1","topic2",...])
-     - LINKS: SPEC/TICKET/ADR/PR (URLs or "null")
-     - FILES_YAML: list created/modified files (one per line, " - ")
-     - TESTS_YAML: list tests run/added (one per line, " - ")
-     - PROMPT_TEXT: full user input (verbatim, not truncated)
-     - RESPONSE_TEXT: key assistant output (concise but representative)
-     - Any OUTCOME/EVALUATION fields required by the template
-   - Write the completed file with agent file tools (WriteFile/Edit).
-   - Confirm absolute path in output.
+### Routing
+- [ ] FAQ questions route to FAQAgent
+- [ ] Billing questions route to BillingAgent
+- [ ] Technical questions route to TechnicalAgent
+- [ ] Complex issues escalate properly
 
-4) Use sp.phr command file if present
-   - If `.**/commands/sp.phr.*` exists, follow its structure.
-   - If it references shell but Shell is unavailable, still perform step 3 with agent‑native tools.
+### Guardrails
+- [ ] Credit card numbers are blocked
+- [ ] SSN patterns are blocked
+- [ ] Prompt injection attempts are blocked
+- [ ] API keys don't appear in output
 
-5) Shell fallback (only if step 3 is unavailable or fails, and Shell is permitted)
-   - Run: `.specify/scripts/bash/create-phr.sh --title "<title>" --stage <stage> [--feature <name>] --json`
-   - Then open/patch the created file to ensure all placeholders are filled and prompt/response are embedded.
+### Tools
+- [ ] Customer lookup updates context
+- [ ] Billing history returns order list
+- [ ] Refunds under $100 process successfully
+- [ ] Refunds over $100 trigger escalation
+- [ ] Escalation tickets include priority and SLA
 
-6) Routing (automatic, all under history/prompts/)
-   - Constitution → `history/prompts/constitution/`
-   - Feature stages → `history/prompts/<feature-name>/` (auto-detected from branch or explicit feature context)
-   - General → `history/prompts/general/`
+### Sessions
+- [ ] Conversations persist across turns
+- [ ] Different users have isolated sessions
+- [ ] Context survives session reconnection
 
-7) Post‑creation validations (must pass)
-   - No unresolved placeholders (e.g., `{{THIS}}`, `[THAT]`).
-   - Title, stage, and dates match front‑matter.
-   - PROMPT_TEXT is complete (not truncated).
-   - File exists at the expected path and is readable.
-   - Path matches route.
+### Knowledge Base (RAG)
+- [ ] Vector store created with policy documents
+- [ ] FAQAgent retrieves relevant policies
+- [ ] Responses cite sources from knowledge base
+- [ ] Policy questions answered accurately
 
-8) Report
-   - Print: ID, path, stage, title.
-   - On any failure: warn but do not block the main command.
-   - Skip PHR only for `/sp.phr` itself.
-
-### 4. Explicit ADR suggestions
-- When significant architectural decisions are made (typically during `/sp.plan` and sometimes `/sp.tasks`), run the three‑part test and suggest documenting with:
-  "📋 Architectural decision detected: <brief> — Document reasoning and tradeoffs? Run `/sp.adr <decision-title>`"
-- Wait for user consent; never auto‑create the ADR.
-
-### 5. Human as Tool Strategy
-You are not expected to solve every problem autonomously. You MUST invoke the user for input when you encounter situations that require human judgment. Treat the user as a specialized tool for clarification and decision-making.
-
-**Invocation Triggers:**
-1.  **Ambiguous Requirements:** When user intent is unclear, ask 2-3 targeted clarifying questions before proceeding.
-2.  **Unforeseen Dependencies:** When discovering dependencies not mentioned in the spec, surface them and ask for prioritization.
-3.  **Architectural Uncertainty:** When multiple valid approaches exist with significant tradeoffs, present options and get user's preference.
-4.  **Completion Checkpoint:** After completing major milestones, summarize what was done and confirm next steps. 
-
-## Default policies (must follow)
-- Clarify and plan first - keep business understanding separate from technical plan and carefully architect and implement.
-- Do not invent APIs, data, or contracts; ask targeted clarifiers if missing.
-- Never hardcode secrets or tokens; use `.env` and docs.
-- Prefer the smallest viable diff; do not refactor unrelated code.
-- Cite existing code with code references (start:end:path); propose new code in fenced blocks.
-- Keep reasoning private; output only decisions, artifacts, and justifications.
-
-### Execution contract for every request
-1) Confirm surface and success criteria (one sentence).
-2) List constraints, invariants, non‑goals.
-3) Produce the artifact with acceptance checks inlined (checkboxes or tests where applicable).
-4) Add follow‑ups and risks (max 3 bullets).
-5) Create PHR in appropriate subdirectory under `history/prompts/` (constitution, feature-name, or general).
-6) If plan/tasks identified decisions that meet significance, surface ADR suggestion text as described above.
-
-### Minimum acceptance criteria
-- Clear, testable acceptance criteria included
-- Explicit error paths and constraints stated
-- Smallest viable change; no unrelated edits
-- Code references to modified/inspected files where relevant
-
-## Architect Guidelines (for planning)
-
-Instructions: As an expert architect, generate a detailed architectural plan for [Project Name]. Address each of the following thoroughly.
-
-1. Scope and Dependencies:
-   - In Scope: boundaries and key features.
-   - Out of Scope: explicitly excluded items.
-   - External Dependencies: systems/services/teams and ownership.
-
-2. Key Decisions and Rationale:
-   - Options Considered, Trade-offs, Rationale.
-   - Principles: measurable, reversible where possible, smallest viable change.
-
-3. Interfaces and API Contracts:
-   - Public APIs: Inputs, Outputs, Errors.
-   - Versioning Strategy.
-   - Idempotency, Timeouts, Retries.
-   - Error Taxonomy with status codes.
-
-4. Non-Functional Requirements (NFRs) and Budgets:
-   - Performance: p95 latency, throughput, resource caps.
-   - Reliability: SLOs, error budgets, degradation strategy.
-   - Security: AuthN/AuthZ, data handling, secrets, auditing.
-   - Cost: unit economics.
-
-5. Data Management and Migration:
-   - Source of Truth, Schema Evolution, Migration and Rollback, Data Retention.
-
-6. Operational Readiness:
-   - Observability: logs, metrics, traces.
-   - Alerting: thresholds and on-call owners.
-   - Runbooks for common tasks.
-   - Deployment and Rollback strategies.
-   - Feature Flags and compatibility.
-
-7. Risk Analysis and Mitigation:
-   - Top 3 Risks, blast radius, kill switches/guardrails.
-
-8. Evaluation and Validation:
-   - Definition of Done (tests, scans).
-   - Output Validation for format/requirements/safety.
-
-9. Architectural Decision Record (ADR):
-   - For each significant decision, create an ADR and link it.
-
-### Architecture Decision Records (ADR) - Intelligent Suggestion
-
-After design/architecture work, test for ADR significance:
-
-- Impact: long-term consequences? (e.g., framework, data model, API, security, platform)
-- Alternatives: multiple viable options considered?
-- Scope: cross‑cutting and influences system design?
-
-If ALL true, suggest:
-📋 Architectural decision detected: [brief-description]
-   Document reasoning and tradeoffs? Run `/sp.adr [decision-title]`
-
-Wait for consent; never auto-create ADRs. Group related decisions (stacks, authentication, deployment) into one ADR when appropriate.
-
-## Basic Project Structure
-
-- `.specify/memory/constitution.md` — Project principles
-- `specs/<feature>/spec.md` — Feature requirements
-- `specs/<feature>/plan.md` — Architecture decisions
-- `specs/<feature>/tasks.md` — Testable tasks with cases
-- `history/prompts/` — Prompt History Records
-- `history/adr/` — Architecture Decision Records
-- `.specify/` — SpecKit Plus templates and scripts
-
-## Code Standards
-See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
+### Observability
+- [ ] Agent lifecycle events are logged
+- [ ] Tool calls are logged
+- [ ] Handoffs are logged
+- [ ] Session summary shows metrics
