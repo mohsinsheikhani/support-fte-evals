@@ -2,6 +2,7 @@
 
 from agents import Agent
 from src.tools.support import check_support_tickets
+from src.agents.escalation import escalation_agent
 
 # Common troubleshooting knowledge
 TROUBLESHOOTING_GUIDE = """
@@ -74,4 +75,5 @@ For issues you cannot resolve:
 In these cases, hand off to EscalationAgent with full context.
 """,
     tools=[check_support_tickets],
+    handoffs=[escalation_agent],
 )

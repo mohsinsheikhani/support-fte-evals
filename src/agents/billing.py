@@ -3,6 +3,7 @@
 from agents import Agent
 from src.tools.billing import check_billing_history, process_refund
 from src.tools.support import check_support_tickets
+from src.agents.escalation import escalation_agent
 
 billing_agent = Agent(
     name="BillingAgent",
@@ -34,4 +35,5 @@ Important policies:
 - Duplicate charges: Always eligible for refund
 """,
     tools=[check_billing_history, process_refund, check_support_tickets],
+    handoffs=[escalation_agent],
 )
