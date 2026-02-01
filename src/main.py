@@ -4,6 +4,10 @@ import asyncio
 from datetime import datetime
 from uuid import uuid4
 from typing import Optional
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
 
 from agents import Runner, RunConfig, InputGuardrailTripwireTriggered, SQLiteSession
 
@@ -82,8 +86,7 @@ async def handle_message(
     # Run configuration
     run_config = RunConfig(
         workflow_name="customer-support",
-        trace_id=f"trace-{uuid4().hex[:8]}",
-        max_turns=10,  # Prevent infinite loops
+        trace_id=f"trace_{uuid4().hex[:8]}",  # Must start with "trace_"
     )
 
     try:
@@ -115,14 +118,19 @@ async def handle_message(
 
     except InputGuardrailTripwireTriggered as e:
         # Handle guardrail violations
-        guardrail_name = e.guardrail_result.guardrail.__name__
+        # Structure: e.guardrail_result.output.output_info
+        output_info = e.guardrail_result.output.output_info
 
-        if "pii" in guardrail_name.lower():
+        # Determine which guardrail was triggered based on output_info
+        if "PII detected" in output_info:
             error_message = PII_ERROR_MESSAGE
-        elif "injection" in guardrail_name.lower():
+            guardrail_type = "pii_guardrail"
+        elif "injection" in output_info.lower():
             error_message = INJECTION_ERROR_MESSAGE
+            guardrail_type = "injection_guardrail"
         else:
             error_message = "I'm sorry, I couldn't process that request."
+            guardrail_type = "unknown_guardrail"
 
         return {
             "response": error_message,
@@ -130,10 +138,12 @@ async def handle_message(
             "context": context.model_dump(),
             "agent_used": "guardrail",
             "success": False,
-            "guardrail_triggered": guardrail_name,
+            "guardrail_triggered": guardrail_type,
         }
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()  # Print full traceback for debugging
         return {
             "response": f"I apologize, but I encountered an error. Please try again. Error: {str(e)}",
             "session_id": session_id,

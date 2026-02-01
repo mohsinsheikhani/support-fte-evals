@@ -61,10 +61,19 @@ def detect_injection(text: str) -> bool:
 async def pii_guardrail(
     context: RunContextWrapper[SupportContext],
     agent,
-    input_text: str,
+    input_text,  # Can be str or list[dict] when using sessions
 ) -> GuardrailFunctionOutput:
     """Block messages containing PII like credit cards, SSN, bank accounts."""
-    detected = detect_pii(input_text)
+    # Handle both string input and list of messages (from session history)
+    text_to_check = input_text
+    if isinstance(input_text, list):
+        # Extract just the latest user message
+        for msg in reversed(input_text):
+            if isinstance(msg, dict) and msg.get("role") == "user":
+                text_to_check = msg.get("content", "")
+                break
+
+    detected = detect_pii(text_to_check)
 
     if detected:
         pii_types = ", ".join(detected)
@@ -83,10 +92,19 @@ async def pii_guardrail(
 async def injection_guardrail(
     context: RunContextWrapper[SupportContext],
     agent,
-    input_text: str,
+    input_text,  # Can be str or list[dict] when using sessions
 ) -> GuardrailFunctionOutput:
     """Block prompt injection attempts."""
-    if detect_injection(input_text):
+    # Handle both string input and list of messages (from session history)
+    text_to_check = input_text
+    if isinstance(input_text, list):
+        # Extract just the latest user message
+        for msg in reversed(input_text):
+            if isinstance(msg, dict) and msg.get("role") == "user":
+                text_to_check = msg.get("content", "")
+                break
+
+    if detect_injection(text_to_check):
         return GuardrailFunctionOutput(
             output_info="Prompt injection attempt detected",
             tripwire_triggered=True,
