@@ -218,6 +218,6 @@ This document classifies test cases by behavior and quadrant to ensure comprehen
 
 ## Next Steps
 
-1. **Create eval dataset (JSON format)**
+1. ~~Create eval dataset (JSON format)~~ ✓ See `dataset.json`
 2. **Build grader implementations**
 3. **Run baseline evaluation**
