@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "description": "Customer Support FTE Evaluation Dataset",
+    "created": "2026-02-02"
+  },
+  "cases": [
+    {
+      "id": "typical-001",
+      "category": "typical",
+      "input": "",
+      "expected_agent": "",
+      "expected_guardrail": null,
+      "expected_tool_calls": [],
+      "rationale": ""
+    }
+  ]
+}
