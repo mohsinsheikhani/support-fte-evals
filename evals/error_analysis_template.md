@@ -8,20 +8,59 @@
 
 ## Phase 1: Data Collection
 
-### 1.1 Raw Test Results Table
+### 1.1 Create AnalyzedCase Objects
 
-**Copy this template and fill in:**
+**Use programmatic error analyzer instead of manual tables:**
+
+```python
+from evals.error_analyzer import AnalyzedCase, analyze_failures, prioritize_fixes
+
+# Create analyzed cases for each test
+cases = [
+    AnalyzedCase(
+        case_id="1",
+        error_location="none",  # "none" for passed, "Component.span" for failed
+        trace={},  # Full execution trace
+        passed=True,
+        input_text="...",
+        expected_output="...",
+        actual_output="..."
+    ),
+    AnalyzedCase(
+        case_id="2",
+        error_location="TriageAgent.routing",
+        trace={"span_1": {...}, "span_2": {...}},
+        passed=False,
+        upstream_issue=False,  # Set True if failure due to upstream degradation
+        root_cause="Agent asks for email before routing",
+        input_text="...",
+        expected_output="...",
+        actual_output="..."
+    ),
+    # ... more cases
+]
+
+# Automatically generate error report
+report = analyze_failures(cases)
+
+print(f"Pass Rate: {report['pass_rate']:.1%}")
+print(f"Top Priority: {report['top_priority']}")
+```
+
+### 1.2 Raw Test Results Table (Auto-Generated)
+
+**Manual table (fallback if not using error_analyzer.py):**
 
 | Case ID | Input (first 50 chars) | Expected Output | Actual Output | Status | Observed Behavior |
 |---------|----------------------|-----------------|---------------|--------|-------------------|
 | X | ... | ... | ... | PASS/FAIL | ... |
 | X | ... | ... | ... | PASS/FAIL | ... |
 
-**Summary Stats:**
-- Total Cases: __
-- Passed: __ (___%)
-- Failed: __ (___%)
-- Average Score: ___
+**Summary Stats** (Auto-generated from `analyze_failures()`):
+- Total Cases: `report['total_cases']`
+- Passed: `report['passed']` (`report['pass_rate']`)
+- Failed: `report['failures']` (`report['failure_rate']`)
+- Top Priority: `report['top_priority']`
 
 ---
 
@@ -189,26 +228,51 @@ This prevents FALSE FIX:
 
 ---
 
-## Phase 3: Frequency Counting
+## Phase 3: Frequency Counting (Automated)
 
-### 3.1 Count Failures by Component
+### 3.1 Generate Failure Report
 
-| Component | Failure Count | Total Cases | Frequency | Description |
-|-----------|--------------|-------------|-----------|-------------|
-| Comp A | __ | __ | __% | ... |
-| Comp B | __ | __ | __% | ... |
-| Comp C | __ | __ | __% | ... |
-| **TOTALS** | __ | __ | __% | |
+**Use `analyze_failures()` to auto-generate frequency counts:**
 
-### 3.2 Identify Top 3 Failure Sources
+```python
+report = analyze_failures(cases)
 
-1. **Primary**: _____________ (__% of failures)
-2. **Secondary**: _____________ (__% of failures)
-3. **Tertiary**: _____________ (__% of failures)
+# Automatically generated breakdown
+for component, data in report['breakdown'].items():
+    print(f"{component}: {data['count']} failures ({data['percentage']:.1f}%)")
+
+# Output example:
+# TriageAgent.identity_check: 5 failures (100.0%)
+```
+
+### 3.2 Frequency Table (Auto-Generated)
+
+| Component | Failure Count | Frequency (of failures) | Frequency (of total) |
+|-----------|--------------|------------------------|---------------------|
+| _Auto-populated from `report['breakdown']`_ | | | |
+
+**From error_analyzer output:**
+```python
+{
+  "breakdown": {
+    "TriageAgent.identity_check": {
+      "count": 5,
+      "percentage": 100.0,  # Of failures
+      "percentage_of_total": 71.4  # Of all cases
+    }
+  }
+}
+```
+
+### 3.3 Identify Top Failure Sources (Auto-Generated)
+
+**Top Priority**: `report['top_priority']`
 
 **Single Root Cause?**
-- [ ] YES - Single component accounts for ≥60% of failures
-- [ ] NO - Failures distributed across multiple components
+```python
+top_component_pct = list(report['breakdown'].values())[0]['percentage']
+single_root_cause = top_component_pct >= 60.0
+```
 
 ---
 
@@ -300,15 +364,35 @@ case_5 = AnalyzedCase(
 - 0.3 = Very hard (research needed, days)
 - 0.1 = Extremely hard (fundamental redesign, weeks)
 
-### 5.2 Calculate Priority Scores
+### 5.2 Calculate Priority Scores (Automated)
 
 **Priority = Frequency × Feasibility**
 
-| Fix Option | Frequency | Feasibility | Priority | Rank |
-|------------|-----------|-------------|----------|------|
-| 1. | __% | 0.X | 0.XX | #X |
-| 2. | __% | 0.X | 0.XX | #X |
-| 3. | __% | 0.X | 0.XX | #X |
+**Use `prioritize_fixes()` to auto-calculate priorities:**
+
+```python
+# Define feasibility for each component
+feasibility = {
+    "TriageAgent.identity_check": 0.9,  # Easy - prompt change
+    "BillingAgent.refund_logic": 0.5,   # Hard - business logic change
+}
+
+# Automatically calculate and rank priorities
+priorities = prioritize_fixes(report, feasibility)
+
+# Output is sorted by priority score (highest first)
+for i, p in enumerate(priorities, 1):
+    print(f"#{i} {p['component']}: {p['priority_score']:.3f}")
+
+# Output example:
+# #1 TriageAgent.identity_check: 0.900
+```
+
+**Priority Table (Auto-Generated)**:
+
+| Rank | Component | Frequency | Feasibility | Priority Score |
+|------|-----------|-----------|-------------|----------------|
+| _Auto-populated from `prioritize_fixes()` output_ | | | | |
 
 ### 5.3 Decision Matrix
 
