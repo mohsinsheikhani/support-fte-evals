@@ -2,6 +2,32 @@
 
 Comprehensive evaluation system for Customer Support Digital FTE agent using eval-driven development methodology.
 
+## Methodology: agent-evals Skill
+
+This evaluation framework is built following the **agent-evals skill** - a comprehensive methodology for designing and implementing evaluation systems for AI agents. The skill was created iteratively through hands-on learning and practice, capturing best practices for:
+
+- **Eval-driven development**: Write graders first, let failures reveal infrastructure needs
+- **Systematic error analysis**: Component-level spreadsheets, frequency counting, prioritization formulas
+- **Real agent testing**: Integration tests with actual agent responses, not mocks
+- **Regression protection**: Baseline evaluation before/after changes
+- **Defense in depth**: Multiple validation layers (input → routing → agent → output)
+
+**Using the agent-evals skill:**
+```bash
+# Invoke the skill in Claude Code
+/agent-evals
+```
+
+The skill provides guidance on:
+1. Designing evaluation frameworks (quadrant classification)
+2. Implementing code-based graders (Q1)
+3. Building LLM judges with human calibration (Q2)
+4. Handling complex scenarios (Q4)
+5. Systematic error analysis when failures occur
+6. Programmatic error data generation
+
+**All patterns, templates, and methodologies in this directory come from iterative application of the agent-evals skill.**
+
 ## Quick Start
 
 ```bash
@@ -131,28 +157,31 @@ All graders return a standardized format:
 
 ## Development Workflow
 
+**Source**: These workflows come from the **agent-evals skill**, developed iteratively through practice.
+
 ### 1. Eval-Driven Development
 - Write grader FIRST, before fixing agent
 - Let failures reveal infrastructure needs
 - Real agent testing, not mocks
+- Pattern: Test → Fail → Analyze → Fix → Repeat
 
 ### 2. Systematic Error Analysis
-When failures occur:
+When failures occur (methodology from agent-evals skill):
 1. **Component-level spreadsheet** - Break execution into spans
 2. **Frequency counting** - Calculate failure_count / total_cases
 3. **Prioritization formula** - Frequency × Feasibility
 4. **Trace review** - Examine complete execution traces
 5. **Upstream degradation** - Distinguish bad component vs bad input
 
-See: `docs/error_analysis_template.md`
+See: `docs/error_analysis_template.md` (template from agent-evals skill)
 
 ### 3. Iteration Pattern
 1. Implement grader
 2. Run against real agent
-3. Analyze failures systematically
+3. Analyze failures systematically (using agent-evals methods)
 4. Fix infrastructure/agent
 5. Re-run until 100%
-6. Document baseline
+6. Document baseline (iteration count, what was learned)
 
 ## Key Principles
 
@@ -233,6 +262,43 @@ Historical documents in `docs/graders/archive/`
    - No calibration needed
    - Perfect for regression
 
+## About the agent-evals Skill
+
+This evaluation framework implements patterns from the **agent-evals skill**, which was created iteratively as part of a learning journey in AI agent evaluation.
+
+### Skill Development Journey
+The agent-evals skill was built through:
+1. **Learning phase**: Study of eval methodologies, LLM judges, systematic error analysis
+2. **Practice phase**: Hands-on implementation on this Customer Support FTE project
+3. **Iteration phase**: Each grader implementation refined the methodology
+4. **Capture phase**: Patterns documented and formalized into a reusable skill
+
+### What the Skill Captures
+- Evaluation quadrant classification (Q1-Q4)
+- Systematic error analysis methodology (spreadsheet, frequency, prioritization)
+- Eval-driven development workflow
+- Real vs mock testing principles
+- State management patterns
+- Programmatic error analysis tools
+- LLM judge calibration approaches
+- Baseline establishment for regression protection
+
+### Skill Evolution Through This Project
+- **routing_grader** (3 iterations) → Revealed need for systematic error analysis
+- **tool_usage_grader** (3 iterations) → Discovered session contamination patterns, business logic separation
+- **citation_grader** (0 iterations) → Validated existing feature testing patterns
+- **Comprehensive baseline** → State contamination between test cases
+
+Each iteration added to the skill's knowledge base, making future evaluations faster and more reliable.
+
+### Using the Skill
+```bash
+# In Claude Code, invoke the skill for eval guidance
+/agent-evals
+```
+
+The skill provides step-by-step guidance for designing evaluation frameworks, implementing graders, and analyzing failures systematically.
+
 ## Contact
 
 For questions or issues with the evaluation framework, see:
@@ -240,6 +306,8 @@ For questions or issues with the evaluation framework, see:
 - Agent implementation: `src/agents/`
 - Tools: `src/tools/`
 - Guardrails: `src/guardrails/`
+
+**Methodology**: Based on agent-evals skill (developed iteratively through practice)
 
 ---
 
