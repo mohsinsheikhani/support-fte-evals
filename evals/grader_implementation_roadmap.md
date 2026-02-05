@@ -7,7 +7,7 @@
 - [x] Implement `routing_grader` (covers 7 cases) ✓ - 100% pass rate
 - [x] Implement `input_guardrail_grader` (2 cases) ✓ - 100% pass rate
 - [x] Implement `tool_usage_grader` (2 cases) ✓ - 100% pass rate (3 iterations)
-- [ ] Implement `citation_grader` (1 case)
+- [x] Implement `citation_grader` (1 case) ✓ - 100% pass rate
 - [ ] Implement `output_guardrail_grader` (1 case)
 - [ ] Implement `routing_flexible_grader` (1 case)
 - [ ] **Run baseline evaluation on 10 cases**
