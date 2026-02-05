@@ -2,7 +2,7 @@
 
 ## Implementation Roadmap
 
-### Week 1: Q1 Code Graders (Priority)
+### Week 1: Q1 Code Graders (Priority) ✓ COMPLETE
 
 - [x] Implement `routing_grader` (covers 7 cases) ✓ - 100% pass rate
 - [x] Implement `input_guardrail_grader` (2 cases) ✓ - 100% pass rate
@@ -10,7 +10,7 @@
 - [x] Implement `citation_grader` (1 case) ✓ - 100% pass rate
 - [x] Implement `output_guardrail_grader` (1 case) ✓ - 100% pass rate
 - [x] Implement `routing_flexible_grader` (1 case) ✓ - 100% pass rate
-- [ ] **Run baseline evaluation on 12 cases (all Q1 + flexible routing)**
+- [x] **Run baseline evaluation on 14 cases (all Q1)** ✓ - 100% pass rate (14/14)
 
 ### Week 2: Q2 LLM Graders
 
