@@ -61,6 +61,134 @@ For this grader, break down the execution into distinct components:
 
 ---
 
+## Phase 2.5: Trace Review (Understanding Failure Chains)
+
+**CRITICAL**: Examine complete traces for each failed case, not just final outputs.
+
+> "A component might fail frequently because it receives degraded input upstream, not because it's broken. Attribution without investigation produces false improvements."
+
+### 2.5.1 Capture Full Traces for Failed Cases
+
+**For EACH failed case, document the complete execution trace:**
+
+**Case ID**: __
+
+**Input**: (Original user input)
+
+**Complete Trace** (all intermediate outputs):
+
+```
+Span 1 - [Component A Name]:
+  Input received: ...
+  Processing performed: ...
+  Output produced: ...
+  Status: ✓ Success / ✗ Failed
+
+Span 2 - [Component B Name]:
+  Input received: ... (from Span 1)
+  Processing performed: ...
+  Output produced: ...
+  Status: ✓ Success / ✗ Failed
+
+Span 3 - [Component C Name]:
+  Input received: ... (from Span 2)
+  Processing performed: ...
+  Output produced: ...
+  Status: ✗ FAILURE OCCURRED HERE
+  Error: ...
+
+NEVER REACHED:
+Span 4 - [Component D Name]: Not executed
+Span 5 - [Component E Name]: Not executed
+```
+
+### 2.5.2 Analyze Failure Chain
+
+**For the failing span, examine:**
+
+1. **Input Quality**: Was the input to this span correct/valid?
+   - [ ] Good - Input was valid
+   - [ ] Degraded - Input was malformed/incorrect from upstream
+
+2. **Processing Logic**: Did the component process correctly given its input?
+   - [ ] Correct - Component handled input appropriately
+   - [ ] Incorrect - Component logic is flawed
+
+3. **Output Problem**: What specifically was wrong with the output?
+   ```
+   Expected: ...
+   Actual: ...
+   Gap: ...
+   ```
+
+**Example:**
+```
+Case 5: "I was charged twice for order ORD-1001"
+
+Span 2 - Triage Decision Making:
+  Input received: User message "I was charged twice..."
+  Processing performed: Checked instructions "Identify customer using email"
+  Output produced: Decision = "Ask for email before routing"
+  Status: ✗ WRONG DECISION
+
+  Analysis:
+  - Input Quality: ✓ Good (valid user message)
+  - Processing Logic: ✗ Incorrect (instructions caused bad decision)
+  - Output Problem: Should output "Route to BillingAgent",
+                    instead output "Ask for email"
+
+  → Component is following instructions, but INSTRUCTIONS ARE WRONG
+  → Fix instructions, not the component logic
+```
+
+---
+
+## Phase 2.6: Upstream Degradation Analysis
+
+**CRITICAL**: Distinguish between "component is broken" vs "component received bad input"
+
+### 2.6.1 Upstream Dependency Table
+
+**For each failing component, check if upstream caused the failure:**
+
+| Failed Component | Upstream Component | Input Quality | Upstream Caused Failure? | Evidence |
+|-----------------|-------------------|---------------|-------------------------|----------|
+| Comp B | Comp A | Good/Bad | YES/NO | ... |
+| Comp C | Comp B | Good/Bad | YES/NO | ... |
+
+### 2.6.2 Root Cause Attribution Decision
+
+**For each failed component:**
+
+**Component**: ______________
+
+**Received input from**: ______________
+
+**Input quality check:**
+- [ ] **GOOD** - Upstream provided correct/valid input
+  - → Component itself is broken, fix this component
+- [ ] **BAD** - Upstream provided incorrect/invalid input
+  - → Component is working correctly, fix upstream instead
+
+**Example:**
+```
+Failed Component: BillingAgent handoff execution
+Upstream: TriageAgent decision making
+Input Quality: BAD
+  - TriageAgent decided "ask for email"
+  - Should have decided "execute handoff to BillingAgent"
+Upstream Caused Failure: YES
+
+Decision: Don't fix handoff execution (it's fine)
+          Fix TriageAgent decision logic instead
+
+This prevents FALSE FIX:
+  ✗ Spending hours "fixing" handoff execution that works perfectly
+  ✓ Correctly identify decision logic as root cause
+```
+
+---
+
 ## Phase 3: Frequency Counting
 
 ### 3.1 Count Failures by Component
@@ -115,8 +243,42 @@ Agent interprets this as a blocking requirement, not optional step.
 ```
 
 **Trace Verification**: (Did you examine the actual execution trace?)
-- [ ] YES - Examined trace, root cause confirmed
-- [ ] NO - Hypothesis based on output only
+- [ ] YES - Examined complete trace with all spans (Phase 2.5)
+- [ ] NO - Hypothesis based on output only ⚠️ RISKY
+
+**Upstream Check**: (Did you verify this isn't an upstream issue?)
+- [ ] YES - Checked upstream components, issue is in THIS component (Phase 2.6)
+- [ ] NO - Haven't verified upstream ⚠️ MIGHT BE FALSE ATTRIBUTION
+
+---
+
+## Phase 4.2: Structured Trace Data (Optional but Recommended)
+
+**For programmatic analysis, structure traces as:**
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class AnalyzedCase:
+    case_id: str
+    error_location: str  # Which span failed
+    trace: dict          # Full execution trace with all spans
+    upstream_issue: bool # True if failure due to upstream degradation
+    root_cause: str      # Human-readable root cause description
+
+# Example:
+case_5 = AnalyzedCase(
+    case_id="5",
+    error_location="TriageAgent.decision_making",
+    trace={
+        "span_1": {"input": "...", "output": "..."},
+        "span_2": {"input": "...", "output": "...", "failed": True},
+    },
+    upstream_issue=False,  # Instructions are wrong, not upstream data
+    root_cause="Triage instructions require email before routing"
+)
+```
 
 ---
 
@@ -264,16 +426,31 @@ This prevented technical debt.
 **Did we follow the systematic method?**
 - [ ] Created component spreadsheet (not just eyeballed)
 - [ ] Counted failures systematically (not guessed)
+- [ ] **Captured complete traces with all spans (not just outputs)**
+- [ ] **Performed upstream degradation analysis (not assumed component is broken)**
 - [ ] Calculated priorities with formula (not gut feel)
 - [ ] Examined actual traces (not assumed root cause)
 - [ ] Documented BEFORE implementing (not after)
 - [ ] Re-ran full suite (not just failed cases)
+
+**Most Common Mistakes to Avoid:**
+- ❌ Skipping trace review → Risk false attribution
+- ❌ Not checking upstream → Fix working component instead of broken upstream
+- ❌ Looking only at final output → Miss where error actually originated
+- ❌ Assuming component is broken → Might be following bad instructions/receiving bad input
+
+**Validation Questions:**
+1. Did you examine the **complete trace** for each failed case? (Not just "it failed")
+2. Did you verify **input quality** to failing component? (Upstream degradation check)
+3. Can you point to **exact span** where error occurred? (Specific component, not vague guess)
+4. Do you have **evidence** from traces? (Not just intuition)
 
 **Time Investment:**
 - Analysis time: __ minutes
 - Implementation time: __ minutes
 - Total: __ minutes
 - **Wasted effort on wrong components**: __ minutes (target: 0)
+- **False attribution prevented**: __ cases (due to upstream analysis)
 
 ---
 
@@ -281,22 +458,35 @@ This prevented technical debt.
 
 **Use this for every test run:**
 
+### Phase 1-2: Attribution
 1. [ ] Fill in raw results table
 2. [ ] Create component spreadsheet
 3. [ ] Count failures by component
 4. [ ] Identify top 3 failure sources
-5. [ ] Analyze root causes with traces
-6. [ ] List fix options with feasibility
-7. [ ] Calculate priority scores
-8. [ ] Select fix with rationale
-9. [ ] Document implementation plan
-10. [ ] Implement fix
-11. [ ] Re-run full test suite
-12. [ ] Compare before/after
-13. [ ] Document insights
-14. [ ] Decide: iterate or move on
 
-**Time Required**: 25-30 minutes of analysis per iteration
+### Phase 2.5-2.6: **CRITICAL - Trace Analysis**
+5. [ ] **Capture complete traces for ALL failed cases**
+6. [ ] **Document each span: input → processing → output**
+7. [ ] **Analyze failure chains: which span actually failed?**
+8. [ ] **Upstream degradation check: bad input or bad component?**
+
+### Phase 3-5: Prioritization & Fixing
+9. [ ] Analyze root causes (WITH trace evidence)
+10. [ ] List fix options with feasibility
+11. [ ] Calculate priority scores
+12. [ ] Select fix with rationale (root cause vs symptoms)
+13. [ ] Document implementation plan
+
+### Phase 6-8: Implementation & Validation
+14. [ ] Implement fix
+15. [ ] Re-run full test suite
+16. [ ] Compare before/after with new traces
+17. [ ] Document insights
+18. [ ] Decide: iterate or move on
+
+**CRITICAL STEPS (Cannot Skip):**
+- ✅ Step 5-8: Trace analysis and upstream check
+- ✅ Without traces: Risk fixing wrong component (false attribution)
 
 **Payoff**: Prevents hours/days of fixing wrong components
 
