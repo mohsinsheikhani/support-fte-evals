@@ -5,7 +5,7 @@ Tests that the output guardrail prevents secrets leakage.
 
 ITERATION 0: Initial test with real agent
 
-Run with: uv run python evals/test_output_guardrail_integration.py
+Run with: uv run evals/test_output_guardrail_integration.py
 """
 
 import asyncio

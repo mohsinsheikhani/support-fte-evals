@@ -14,7 +14,7 @@ Q1 Graders (6 total):
 
 Total: 14 test cases (12 unique + 2 shared with routing)
 
-Run with: uv run python evals/run_q1_baseline.py
+Run with: uv run evals/run_q1_baseline.py
 """
 
 import asyncio

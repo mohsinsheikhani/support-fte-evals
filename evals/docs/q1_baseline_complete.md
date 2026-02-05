@@ -168,7 +168,7 @@ Any future changes that break these behaviors will be caught by baseline evaluat
 
 ```bash
 # Run complete Q1 baseline
-uv run python evals/run_q1_baseline.py
+uv run evals/run_q1_baseline.py
 
 # Exit code 0 if 100%, non-zero otherwise
 # Results saved to: evals/q1_baseline_results.json

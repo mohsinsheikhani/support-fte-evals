@@ -3,7 +3,7 @@ Integration test for tool_usage_grader.
 
 ITERATION 3: After fixing BillingAgent instructions to always call process_refund
 
-Run with: uv run python evals/test_tool_usage_integration.py
+Run with: uv run evals/test_tool_usage_integration.py
 """
 
 import asyncio

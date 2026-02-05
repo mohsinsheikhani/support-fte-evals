@@ -5,7 +5,7 @@ Tests that the agent uses static FAQ_KNOWLEDGE correctly.
 
 ITERATION 0: Initial test with real agent
 
-Run with: uv run python evals/test_citation_integration.py
+Run with: uv run evals/test_citation_integration.py
 """
 
 import asyncio

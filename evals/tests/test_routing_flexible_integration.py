@@ -5,7 +5,7 @@ Tests that the agent routes ambiguous queries to ONE of the acceptable agents.
 
 ITERATION 0: Initial test with real agent
 
-Run with: uv run python evals/test_routing_flexible_integration.py
+Run with: uv run evals/test_routing_flexible_integration.py
 """
 
 import asyncio

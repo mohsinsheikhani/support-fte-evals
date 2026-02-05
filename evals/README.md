@@ -6,7 +6,7 @@ Comprehensive evaluation system for Customer Support Digital FTE agent using eva
 
 ```bash
 # Run complete Q1 baseline (all 6 code-based graders)
-uv run python evals/run_q1_baseline.py
+uv run evals/run_q1_baseline.py
 
 # Expected: 100% pass rate (14/14 cases), ~56 seconds
 # Results saved to: evals/results/q1_baseline_results.json
@@ -95,7 +95,7 @@ evals/
 
 ### Full Q1 Baseline
 ```bash
-uv run python evals/run_q1_baseline.py
+uv run evals/run_q1_baseline.py
 # Runs all 6 graders across 14 test cases
 # Exit code 0 if 100%, non-zero otherwise
 ```
@@ -103,10 +103,10 @@ uv run python evals/run_q1_baseline.py
 ### Individual Grader Tests
 ```bash
 # Test routing grader
-uv run python evals/tests/test_routing_integration.py
+uv run evals/tests/test_routing_integration.py
 
 # Test tool usage grader
-uv run python evals/tests/test_tool_usage_integration.py
+uv run evals/tests/test_tool_usage_integration.py
 ```
 
 ### Results

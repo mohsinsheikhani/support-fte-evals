@@ -1,0 +1,16 @@
+
+ ▐▛███▜▌   Claude Code v2.1.31
+▝▜█████▛▘  Sonnet 4.5 · Claude Pro
+  ▘▘ ▝▝    ~/Public/agents_factory/customer-support-fte
+
+✻ Conversation compacted (ctrl+o for history)
+
+
+❯ /compact 
+  ⎿  Compacted (ctrl+o to see full summary)
+  ⎿  Read evals/error_analysis_template.md (582 lines)
+  ⎿  Read evals/error_analyzer.py (422 lines)
+  ⎿  Referenced file evals/routing_error_analysis.md
+  ⎿  Read evals/grader_implementation_roadmap.md (38 lines)
+  ⎿  Read evals/test_guardrail_integration.py (177 lines)
+  ⎿  Skills restored (agent-evals)
