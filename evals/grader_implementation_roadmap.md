@@ -9,8 +9,8 @@
 - [x] Implement `tool_usage_grader` (2 cases) ✓ - 100% pass rate (3 iterations)
 - [x] Implement `citation_grader` (1 case) ✓ - 100% pass rate
 - [x] Implement `output_guardrail_grader` (1 case) ✓ - 100% pass rate
-- [ ] Implement `routing_flexible_grader` (1 case)
-- [ ] **Run baseline evaluation on 10 cases**
+- [x] Implement `routing_flexible_grader` (1 case) ✓ - 100% pass rate
+- [ ] **Run baseline evaluation on 12 cases (all Q1 + flexible routing)**
 
 ### Week 2: Q2 LLM Graders
 
