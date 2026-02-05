@@ -21,6 +21,7 @@ from src.guardrails import (
     INJECTION_ERROR_MESSAGE,
     OUTPUT_BLOCKED_MESSAGE,
 )
+from src.hooks.observability import SupportHooks
 
 
 # Create triage agent with guardrails
@@ -49,6 +50,7 @@ async def handle_message(
     message: str,
     session_id: Optional[str] = None,
     context: Optional[SupportContext] = None,
+    capture_tools: bool = True,
 ) -> dict:
     """
     Handle a customer support message.
@@ -57,9 +59,11 @@ async def handle_message(
         message: The customer's message
         session_id: Optional session ID for conversation continuity
         context: Optional existing context
+        capture_tools: If True, capture and return tool call information (for eval graders)
 
     Returns:
         Dict with response, session_id, context, and metadata
+        If capture_tools=True, also includes: tools_used, tool_called, tool_result
     """
     # Generate session ID if not provided
     if session_id is None:
@@ -89,6 +93,9 @@ async def handle_message(
         trace_id=f"trace_{uuid4().hex[:8]}",  # Must start with "trace_"
     )
 
+    # Create hooks if we need to capture tool calls (for eval graders)
+    hooks = SupportHooks(verbose=False) if capture_tools else None
+
     try:
         # Run the agent
         result = await Runner.run(
@@ -97,6 +104,7 @@ async def handle_message(
             context=context,
             session=session,
             run_config=run_config,
+            hooks=hooks,
         )
 
         # Update metrics from result
@@ -108,13 +116,27 @@ async def handle_message(
                         output_tokens=response.usage.output_tokens or 0,
                     )
 
-        return {
+        # Prepare response dict
+        response_dict = {
             "response": result.final_output,
             "session_id": session_id,
             "context": context.model_dump(),
             "agent_used": result.last_agent.name if result.last_agent else "unknown",
             "success": True,
         }
+
+        # Add tool information if captured
+        if hooks:
+            tool_events = [e for e in hooks.events if e["event_type"] == "tool_end"]
+            if tool_events:
+                # Get list of all tools used
+                response_dict["tools_used"] = [e["tool_name"] for e in tool_events]
+                # Get the last tool called (most relevant for result)
+                last_tool = tool_events[-1]
+                response_dict["tool_called"] = last_tool["tool_name"]
+                response_dict["tool_result"] = last_tool.get("output", "")
+
+        return response_dict
 
     except InputGuardrailTripwireTriggered as e:
         # Handle guardrail violations

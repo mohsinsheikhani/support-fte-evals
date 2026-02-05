@@ -2,5 +2,5 @@
 
 from .routing import grade_routing
 from .guardrails import grade_guardrail
-from .tools import grade_tool_calls
+from .tools import grade_tool_usage
 from .quality import grade_helpfulness, grade_tone

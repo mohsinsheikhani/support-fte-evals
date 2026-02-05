@@ -10,15 +10,15 @@ MOCK_ORDERS = {
         {
             "order_id": "ORD-1001",
             "date": (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d"),
-            "amount": 99.00,
-            "description": "Premium Monthly Subscription",
+            "amount": 50.00,  # Under $100 threshold for auto-refund
+            "description": "Add-on Feature",
             "status": "completed",
         },
         {
             "order_id": "ORD-1002",
             "date": (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d"),
-            "amount": 99.00,
-            "description": "Premium Monthly Subscription (duplicate)",
+            "amount": 150.00,  # Over $100 threshold - requires escalation
+            "description": "Premium Upgrade",
             "status": "completed",
         },
         {
