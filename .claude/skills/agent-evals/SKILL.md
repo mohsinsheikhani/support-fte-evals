@@ -137,6 +137,56 @@ Graders are the functions that score agent outputs. Choose grader type based on 
 
 **Key Insight**: Binary criteria produce more reliable scores than numeric scales because they leverage LLM classification strengths while avoiding calibration weaknesses.
 
+#### CRITICAL: Test Graders with Real Agent Responses
+
+**Anti-Pattern Warning**: Never create graders by testing them with mock/dummy data. Always test graders against real agent outputs.
+
+| Approach | Problem | Result |
+|----------|---------|--------|
+| **❌ Mock Data Testing** | Tests grader logic in isolation, not real agent behavior | Grader passes on fake data, fails to catch real agent bugs |
+| **✅ Real Agent Testing** | Tests grader against actual agent outputs | Discovers real routing failures, missing handoffs, incorrect tool calls |
+
+**Implementation Pattern**:
+
+```python
+# ❌ WRONG: Testing grader with mocked agent response
+def test_routing_grader_unit_test():
+    mock_result = {"agent": "FAQAgent", "response": "..."}  # Fake data
+    expected = {"agent": "FAQAgent"}
+    result = grade_routing(mock_result, expected)
+    assert result["passed"]  # ✓ Test passes, but proves nothing about real agent
+
+# ✅ CORRECT: Testing grader with real agent execution
+async def test_routing_grader_integration():
+    # Actually call the agent
+    agent_result = await handle_message("What's your refund policy?")
+
+    expected = {"agent": "FAQAgent"}
+    grade_result = grade_routing(agent_result, expected)
+
+    # This reveals REAL issues:
+    # - Triage agent not routing to FAQAgent
+    # - Agent asking for email before answering simple questions
+    # - Handoffs not configured correctly
+    assert grade_result["passed"]  # May fail - that's the point!
+```
+
+**Why This Matters**:
+
+Real agent testing discovered in actual implementation:
+- TriageAgent wasn't routing to specialists (stayed at triage level)
+- Agent required customer email even for simple FAQ questions
+- Only 2/7 routing tests passed (29% success rate)
+- These bugs would have been hidden by mock data testing
+
+**Required Practice**:
+1. **Build the grader** with correct logic
+2. **Test against real agent** by calling `handle_message()` or equivalent
+3. **Document failures** - low scores reveal agent bugs, not grader bugs
+4. **Iterate on agent** until graders pass with real responses
+
+**Key Insight**: Graders that pass with mock data but fail with real agents are exposing the exact problems evals are designed to catch. Failing tests on real data is success - you found bugs to fix.
+
 #### Code-Based Grader Structure (Q1, Q3)
 
 Use when criterion is objective/code-checkable. Structure checks as a dictionary with sum-based scoring and standardized result format:
@@ -268,6 +318,7 @@ def combined_grader(output: str, expected: dict, llm_client) -> dict:
 
 | Principle | Guidance |
 |-----------|----------|
+| **Test with real agents** | NEVER test graders with mock data - always use real agent outputs to catch actual bugs |
 | **Prioritize code checks** | Use code-based graders for all deterministic criteria |
 | **Reserve LLM for semantics** | Only invoke LLM judges when semantic understanding is required |
 | **Avoid numeric scales** | Prefer binary YES/NO over 1-5 ratings due to calibration inconsistencies |
