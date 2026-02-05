@@ -4,4 +4,5 @@ from .routing import grade_routing
 from .guardrails import grade_guardrail
 from .tools import grade_tool_usage
 from .citation import grade_citation
+from .output_guardrail import grade_output_guardrail
 from .quality import grade_helpfulness, grade_tone
