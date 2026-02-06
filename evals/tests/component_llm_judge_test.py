@@ -21,6 +21,10 @@ import asyncio
 import sys
 from pathlib import Path
 from typing import Dict, Any, List
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 

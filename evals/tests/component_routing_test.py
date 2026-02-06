@@ -21,6 +21,10 @@ import asyncio
 import sys
 from pathlib import Path
 from typing import Dict, Any
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -97,37 +101,18 @@ async def test_routing_component(case: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         dict with passed status and details
     """
-    # Run ONLY the triage agent to get routing decision
-    # NOTE: We stop before full execution - just want routing decision
+    # Run triage agent to get routing decision
+    # This tests routing logic without full specialist execution
     result = await Runner.run(
         starting_agent=triage_agent,
         input=case["input"],
-        max_turns=1,  # Only one turn - just routing decision
     )
 
-    # Extract which agent was selected
-    # In our architecture, triage either responds or hands off
-    routed_agent = None
-
-    # Check if triage handed off to a specialist
-    if hasattr(result, 'agent') and result.agent:
-        routed_agent = result.agent.name
-    # Or if it stayed at triage (asking for more info)
-    elif "agent_used" in dir(result):
-        routed_agent = result.agent_used
+    # Extract which agent was selected using last_agent
+    if hasattr(result, 'last_agent') and result.last_agent:
+        routed_agent = result.last_agent.name
     else:
-        # Fallback: check handoff in response
-        response_text = str(result.final_output) if hasattr(result, 'final_output') else str(result)
-        if "FAQAgent" in response_text or "faq" in response_text.lower():
-            routed_agent = "FAQAgent"
-        elif "BillingAgent" in response_text or "billing" in response_text.lower():
-            routed_agent = "BillingAgent"
-        elif "TechnicalAgent" in response_text or "technical" in response_text.lower():
-            routed_agent = "TechnicalAgent"
-        elif "EscalationAgent" in response_text or "escalation" in response_text.lower():
-            routed_agent = "EscalationAgent"
-        else:
-            routed_agent = "TriageAgent"
+        routed_agent = "Unknown"
 
     # Check if routing is correct
     expected = case["expected_agent"]
