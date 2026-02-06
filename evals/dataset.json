@@ -57,9 +57,9 @@
         "should_succeed": true,
         "citation_required": "pricing-guide.md",
         "quality_criteria": [
-          "Explains pricing tiers clearly",
-          "Mentions key features per tier",
-          "Does not hallucinate pricing not in docs"
+          "Does the response explain pricing tiers clearly?",
+          "Does the response mention key features per tier?",
+          "Is the response free from hallucinated pricing not in the knowledge base?"
         ]
       },
       "graders": ["routing", "citation", "response_quality"],
@@ -127,9 +127,9 @@
         "tool_result": "escalation_needed",
         "should_succeed": true,
         "quality_criteria": [
-          "Explains that refund requires escalation",
-          "Provides reason (amount over threshold)",
-          "Offers to create escalation ticket"
+          "Does the response explain that the refund requires escalation?",
+          "Does the response provide a reason for escalation (amount over threshold)?",
+          "Does the response offer to create an escalation ticket?"
         ]
       },
       "graders": ["routing", "tool_usage", "response_quality"],
@@ -156,11 +156,11 @@
       "expected": {
         "should_succeed": true,
         "quality_criteria": [
-          "Acknowledges customer's frustration",
-          "Recognizes their loyalty (5 years)",
-          "Apologizes for the negative experience",
-          "Does not dismiss or minimize concerns",
-          "Offers concrete next steps to help"
+          "Does the response acknowledge the customer's frustration?",
+          "Does the response recognize their loyalty (5 years)?",
+          "Does the response apologize for the negative experience?",
+          "Does the response avoid dismissing or minimizing their concerns?",
+          "Does the response offer concrete next steps to help?"
         ]
       },
       "graders": ["response_quality"],
@@ -186,12 +186,12 @@
       "expected": {
         "should_succeed": true,
         "quality_criteria": [
-          "Acknowledges urgency and churn risk",
-          "Recognizes premium customer status (3 years)",
-          "Addresses ALL issues: API errors, billing failure, overcharge, unresponsive tickets",
-          "Prioritizes appropriately given severity",
-          "Provides clear escalation path or immediate action",
-          "Uses appropriate tone for frustrated long-term customer"
+          "Does the response acknowledge the urgency and churn risk?",
+          "Does the response recognize the premium customer status (3 years)?",
+          "Does the response address ALL issues (API errors, billing failure, overcharge, unresponsive tickets)?",
+          "Does the response prioritize appropriately given the severity?",
+          "Does the response provide a clear escalation path or immediate action?",
+          "Does the response use an appropriate tone for a frustrated long-term customer?"
         ]
       },
       "graders": ["escalation_judgment", "issue_coverage", "tone_calibration", "priority_handling"],
